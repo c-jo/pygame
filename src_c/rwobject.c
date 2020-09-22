@@ -640,6 +640,26 @@ _rwops_from_pystr(PyObject *obj)
         }
         if (oencoded != Py_None) {
             rw = SDL_RWFromFile(Bytes_AS_STRING(oencoded), "rb");
+#if __riscos__
+
+            if (!rw && strrchr(Bytes_AS_STRING(oencoded), '.'))
+            {
+                char *name = strdup(Bytes_AS_STRING(oencoded));
+                char *x = strrchr(name,'.');
+                if (!rw)
+                {
+                    *x = '/'; // Try with / instead of .
+                    rw = SDL_RWFromFile(name, "rb");
+                }
+                if (!rw)
+                {
+                    *x = '\0'; // Try chopping the extension off
+                    rw = SDL_RWFromFile(name, "rb");
+                }
+
+                free(name);
+            }
+#endif // __riscos__
         }
         Py_DECREF(oencoded);
         if (rw) {

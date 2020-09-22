@@ -305,6 +305,16 @@ music_load(PyObject *self, PyObject *args)
     else if (oencoded != NULL) {
         name = Bytes_AS_STRING(oencoded);
         Py_BEGIN_ALLOW_THREADS new_music = Mix_LoadMUS(name);
+#if __riscos__
+        if (!new_music && strrchr(name,'.'))
+        {
+            char *name2 = strdup(name);
+            char *x = strrchr(name2, '.');
+            *x = '/';
+            new_music = Mix_LoadMUS(name2);
+            free(name2);
+        }
+ #endif
         Py_END_ALLOW_THREADS Py_DECREF(oencoded);
     }
     else {

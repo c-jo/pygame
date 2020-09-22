@@ -64,6 +64,39 @@
 #include <strings.h>
 #endif
 
+#ifdef __riscos__
+SDL_Surface *_IMG_Load(const char *file)
+{
+    SDL_Surface *surf = IMG_Load(file);
+    // Either got it or no . in the name anyway
+    if (surf || !strrchr(file,'.'))
+        return surf;
+
+    // copy the name
+    char *file2 = strdup(file);
+
+    // Try swapping the last . for a /
+    char *x = strrchr(file2, '.');
+    *x = '/';
+    surf = IMG_Load(file2);
+
+    // If that didn't work drop the extension
+    if (!surf)
+    {
+        *x = 0;
+        surf = IMG_Load(file2);
+    }
+
+    free(file2);
+    return surf;
+}
+#else
+SDL_Surface *_IMG_Load(const char *file)
+{
+    return IMG_Load(file);
+}
+#endif // if __riscos__
+
 #define JPEG_QUALITY 85
 
 #ifdef WITH_THREAD
@@ -116,15 +149,15 @@ image_load_ext(PyObject *self, PyObject *arg)
         if (namelen > 4 && !strcasecmp(name + namelen - 4, ".gif")) {
             /* using multiple threads does not work for (at least) SDL_image <= 2.0.4 */
             SDL_LockMutex(_pg_img_mutex);
-            surf = IMG_Load(name);
+            surf = _IMG_Load(name);
             SDL_UnlockMutex(_pg_img_mutex);
         }
         else {
-            surf = IMG_Load(name);
+            surf = _IMG_Load(name);
         }
         Py_END_ALLOW_THREADS;
 #else /* ~WITH_THREAD */
-        surf = IMG_Load(name);
+        surf = _IMG_Load(name);
 #endif /* WITH_THREAD */
         Py_DECREF(oencoded);
     }
